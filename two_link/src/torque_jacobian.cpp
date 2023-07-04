@@ -30,19 +30,23 @@ TorqJ::TorqJ()
     : node_handle_(""),
       priv_node_handle_("~")
 {
-  //---For disturbance observer--//
   robot_name_ = node_handle_.param<std::string>("robot_name", "dasom");
 
+  // End Effector Position PID gain parameter
   position_p_gain = node_handle_.param<double>("position_p_gain", 1);
   position_i_gain = node_handle_.param<double>("position_i_gain", 1);
   position_d_gain = node_handle_.param<double>("position_d_gain", 1);
+
+
+  // Q-filter
   Cut_Off_Freq = node_handle_.param<double>("Cut_Off_Freq", 1);
 
+  //Model of DOB
   polar_moment_1 = node_handle_.param<double>("polar_moment_1", 1);
   polar_moment_2 = node_handle_.param<double>("polar_moment_2", 1);
 
 
-  //---For admittance control--//
+  //admittance control parameter--//
   virtual_mass_x = node_handle_.param<double>("virtual_mass_x", 1);
   virtual_damper_x = node_handle_.param<double>("virtual_damper_x", 1);
   virtual_spring_x = node_handle_.param<double>("virtual_spring_x", 1);
@@ -62,11 +66,11 @@ TorqJ::TorqJ()
   initPublisher();
   initSubscriber();
 
+
   virtual_mass << virtual_mass_x, virtual_mass_y;
   virtual_damper << virtual_damper_x, virtual_damper_y;
   virtual_spring << virtual_spring_x, virtual_spring_y;
 
-  // std::cout<<V_gain<<std::endl<<"---------------------------------------"<<std::endl;
 
   ROS_INFO("TorqJ node start");
   ROS_INFO("===========================================");
@@ -145,7 +149,6 @@ TorqJ::TorqJ()
 
   D_x << 0, 0;
 
-  //-----State Space Representation----//
   A_y << 0, 1,
       -virtual_spring[1] / virtual_mass[1], -virtual_damper[1] / virtual_mass[1];
 
@@ -207,6 +210,7 @@ void TorqJ::initSubscriber()
 
 void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
 {
+  //Servo state subscriber
   angle_measured[0] = msg->position.at(0);
   angle_measured[1] = msg->position.at(1);
   angle_measured[2] = msg->position.at(4);
@@ -430,10 +434,9 @@ void TorqJ::DoB()
   d_hat[0] = angle_d_hat[0] - angle_d_lpf[0]; // d_hat: estimated dist
 
   angle_d[0] = angle_ref[0] - d_hat[0];
-  
+
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
   // 2nd motor
   // State space (Gn)//
   Q_M_dot_2 = Q_M_A * Q_M_2 + Q_M_B * angle_measured[1];

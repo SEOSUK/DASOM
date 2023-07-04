@@ -48,58 +48,42 @@ class TorqJ
   Eigen::Vector2d X_ref;
   Eigen::Vector2d X_cmd;
   Eigen::Vector2d X_Command;
-  Eigen::Vector2d X_measured;
   Eigen::Vector2d V_measured;
   Eigen::Vector3d angle_measured;
-  Eigen::Vector2d theta_dot;
 
-
-  Eigen::Vector2d X_error_p;
-  Eigen::Vector2d X_error_p_i;
-  Eigen::Vector2d X_error_i;
-  Eigen::Vector2d X_error_d;
-
-
-  Eigen::Vector2d V_error_p;
-  Eigen::Vector2d V_error_p_i;
-  Eigen::Vector2d V_error_i;
-  Eigen::Vector2d V_error_d;
-
-
-  Eigen::Vector2d error_gain;
 
   Eigen::MatrixXd J;
   Eigen::MatrixXd JT;
   Eigen::MatrixXd JTI;
 
 
-  Eigen::Vector2d tau_des;
   Eigen::Vector3d angle_ref;
   Eigen::Vector3d tau_gravity;
   Eigen::Vector2d tau_loop;
   Eigen::Vector2d velocity_measured;
-  Eigen::Vector2d stiction_gain;
   Eigen::Vector2d FK_EE_pos;
   Eigen::Vector2d POSITION_2;
 
 
   //--DoB--//
+
+
   Eigen::Vector3d angle_d;
   Eigen::Vector2d angle_d_hat;
   Eigen::Vector2d angle_d_lpf;
   Eigen::Vector2d d_hat;
   Eigen::Vector2d angle_d_safe;
   Eigen::Vector3d angle_command;
+
   double position_p_gain;
   double position_i_gain;
   double position_d_gain;
+
   double polar_moment_1;
   double polar_moment_2;
-  double theta_d;
+  
+  double Cut_Off_Freq;
   double Cut_Off_Freq2;
-  double D;
-  double r2;
-
   Eigen::Vector4d Q_M;
   Eigen::Vector4d Q_M_dot;
   Eigen::Vector4d Q_M_2;
@@ -116,6 +100,12 @@ class TorqJ
   Eigen::Vector2d Q_angle_d_B;
   Eigen::Vector2d Q_angle_d_C;
 //--end--//
+
+  //Inverse Kinematics
+  double theta_d;
+  double D;
+  double r2;  
+
 
 //--External_Force_Estimation--//
   Eigen::Vector3d tau_measured;
@@ -149,10 +139,6 @@ class TorqJ
   Eigen::Vector2d Y_dot_from_model_matrix;
   Eigen::Vector2d position_from_model;
 
-  //--For safe--//
-  Eigen::Vector3d angle_safe;
-  Eigen::Vector3d angle_max;
-  Eigen::Vector3d angle_min;
   double virtual_mass_x;
   double virtual_damper_x;
   double virtual_spring_x;
@@ -162,26 +148,20 @@ class TorqJ
   double virtual_damper_y;
   double virtual_spring_y;
 
+  //--For safe--//
+  Eigen::Vector3d angle_safe;
+  Eigen::Vector3d angle_max;
+  Eigen::Vector3d angle_min;
+
 
 
 //--for butterworth--//
-  Eigen::Vector3d bw_2nd_output;
-  Eigen::Vector3d bw_2nd_input;
-  Eigen::Vector3d bw_4th_output;
-  Eigen::Vector3d bw_4th_input;
-  Eigen::Vector2d velocity_filtered;
-
   Eigen::Vector3d bw2_filtered_current_1_input;
   Eigen::Vector3d bw2_filtered_current_1_output;
   Eigen::Vector3d bw2_filtered_current_2_input;
   Eigen::Vector3d bw2_filtered_current_2_output;
   Eigen::Vector3d bw2_filtered_current_3_input;
   Eigen::Vector3d bw2_filtered_current_3_output;
-
-
-
-  Eigen::Vector3d filtered_current;
-
 
   double wc;
   double wc2;
@@ -190,10 +170,6 @@ class TorqJ
   double wc_4th;
   double wc2_4th;
 
-  double cut_off_freq;
-  double cut_off_freq_current;
-
-
   double b0_2nd;
   double b1_2nd;
   double b2_2nd;
@@ -201,11 +177,9 @@ class TorqJ
   double a1_2nd;
   double a2_2nd;
 
-  float Cut_Off_Freq;
-  //V_gain << 1,1;
-
-
-
+  //Current lpf result
+  Eigen::Vector3d filtered_current;
+  double cut_off_freq_current;
 
 //--Service Flag--//
   bool movingFlag = false;
