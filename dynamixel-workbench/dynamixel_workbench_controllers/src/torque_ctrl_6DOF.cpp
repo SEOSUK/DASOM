@@ -16,7 +16,7 @@
 
 /* Authors: Taehun Lim (Darby) */
 
-#include "dynamixel_workbench_controllers/torque_control_pre.h"
+#include "dynamixel_workbench_controllers/torque_ctrl_6DOF.h"
 
 TorqueControl::TorqueControl()
     :node_handle_("")
@@ -26,16 +26,9 @@ TorqueControl::TorqueControl()
 
   uint8_t scan_range        = node_handle_.param<int>("scan_range", 200);
 
-  p_gain_ = node_handle_.param<double>("p_gain", 0.003);
-  d_gain_ = node_handle_.param<double>("d_gain", 0.00002);
-
   double position_p_gain	= node_handle_.param<double>("position_p_gain", 800);
   double position_i_gain	= node_handle_.param<double>("position_i_gain", 0);
   double position_d_gain	= node_handle_.param<double>("position_d_gain", 0);
-
-
-
-
 
   dxl_wb_ = new DynamixelWorkbench;
 
@@ -63,15 +56,13 @@ TorqueControl::TorqueControl()
 
   for (int index = 0; index < dxl_cnt_; index++)
   {
-      dxl_wb_->itemWrite(dxl_id_[index], "Position_P_Gain", position_p_gain);
-      dxl_wb_->itemWrite(dxl_id_[index], "Position_I_Gain", position_i_gain);
-      dxl_wb_->itemWrite(dxl_id_[index], "Position_D_Gain", position_d_gain);
+    dxl_wb_->itemWrite(dxl_id_[index], "Position_P_Gain", position_p_gain);
+    dxl_wb_->itemWrite(dxl_id_[index], "Position_I_Gain", position_i_gain);
+    dxl_wb_->itemWrite(dxl_id_[index], "Position_D_Gain", position_d_gain);
   }
-
 
   initPublisher();
   initSubscriber();
-  initServer();
 
 }
 
@@ -86,8 +77,8 @@ TorqueControl::~TorqueControl()
 void TorqueControl::initMsg()
 {
   printf("-----------------------------------------------------------------------\n");
-  printf("              D.A.S.O.M controller; torque control method              \n");
-  printf("                -This method supports XM430-W350 only-                 \n");
+  printf("      D.A.S.O.M controller; current based position control method      \n");
+  printf("           -This method supports XM430-W350, XH540-W270 only-          \n");
   printf("-----------------------------------------------------------------------\n");
   printf("\n");
 
@@ -111,11 +102,6 @@ void TorqueControl::initPublisher()
 void TorqueControl::initSubscriber()
 {
   joint_command_sub_ = node_handle_.subscribe("/goal_dynamixel_position", 10, &TorqueControl::goalJointPositionCallback, this);
-}
-
-void TorqueControl::initServer()
-{
-  STOP_server_ = node_handle_.advertiseService("/STOP", &TorqueControl::StopCallback, this);
 }
 
 void TorqueControl::jointStatePublish()
@@ -154,39 +140,6 @@ void TorqueControl::jointStatePublish()
     present_position_[index] = dxl_wb_->convertValue2Radian(dxl_id_[index], present_position[index]);
   }
   joint_states_pub_.publish(dynamixel_);
-
-  // ROS_INFO("------------------------------------------------");
-  // // ROS_INFO("%lf, %lf", present_position_[0], present_position_[1]); 
-  
-  // sensor_msgs::JointState test;
-
-  // test.header.stamp = ros::Time::now();
-
-  // for (int i = 0; i < 2; i++)
-  // {
-  //   if (present_position_[i] - present_position_i[i] != 0)
-  //     num_deriv[i] = (present_position_[i] - present_position_i[i]) / time_loop;
-    
-  //   else num_deriv[i] = 0;
-
-  //   present_position_i[i] = present_position_[i];
-
-  //   test.position.push_back(num_deriv[i]);
-  // }
-  // ROS_WARN("%lf", time_loop);
-  // ROS_WARN("%lf, %lf", num_deriv[0], num_deriv[1]);
-
-  // test_pub_.publish(test);
-}
-
-void TorqueControl::controlLoop()
-{
-  const float tilt_motor_mass = 0.082;
-  const float gravity         = 9.8;
-  const float link_length     = 0.12409;
-
-  int32_t calc_torque[2] = {0, };
-
 }
 
 void TorqueControl::goalJointPositionCallback(const sensor_msgs::JointState::ConstPtr &msg)
@@ -201,66 +154,10 @@ void TorqueControl::goalJointPositionCallback(const sensor_msgs::JointState::Con
   }
 
   dxl_wb_->syncWrite("Goal_Position", goal_dxl_position);
-
-  // ROS_INFO("%lf",goal_torque[0]);
-  // ROS_INFO("%lf",goal_torque[1]);
-  // ROS_INFO("-------------------------------------------");
-}
-
-void TorqueControl::ForwardKinematics()
-{
-  geometry_msgs::Twist EndEffector;
-
-  EE_position = EE_pos(present_position_[0], present_position_[1]);
-
-  EndEffector.linear.x = EE_position[0];
-  EndEffector.linear.y = EE_position[1];
-
-  forwardkinematics_pub_.publish(EndEffector);
-}
-
-void TorqueControl::safe_func()
-// stopFlag의 init 값은 flase
-{
-  // // EE_position에 대한 조건
-  // if (EE_position[1] < -0.03)
-  //   stopFlag = true; //조건문을 바꿀 여지가 있을지도?
-
-  // // goal(input) torque에 대한 조건
-  // for (int index = 0; index < dxl_cnt_; index++)
-  // {
-  //   if (goal_torque[index] > 0.1)
-  //     stopFlag = true; // 전류값 스케일 조정이 필요할지도?
-  // }
-
-  // stopFlag == true이면
-  if (stopFlag)
-  {
-    for (int index = 0; index < dxl_cnt_; index++)
-      dxl_wb_->itemWrite(dxl_id_[index], "Torque_Enable", 0);
-    
-    // ROS_INFO("EMERGENCY!!!");
-    // ROS_INFO("Torque X!!!");
-  }
-  else
-  {
-    for (int index = 0; index < dxl_cnt_; index++)
-      dxl_wb_->itemWrite(dxl_id_[index], "Torque_Enable", 1);
-    
-    // ROS_INFO("Torque O!!!");
-  }
-}
-
-bool TorqueControl::StopCallback(dynamixel_workbench_msgs::JointCommand::Request &req,
-                                 dynamixel_workbench_msgs::JointCommand::Response &res)
-{
-  if(stopFlag) stopFlag=false;
-  else stopFlag = true;
-
-  return stopFlag;
 }
 
 void TorqueControl::Test()
+// 필요할 때 잠깐 쓸 수 있게 만들어 놓음(현재 사용하는 용도 없음)
 {
   
 
@@ -269,26 +166,14 @@ void TorqueControl::Test()
 int main(int argc, char **argv)
 {
   // Init ROS node
-  ros::init(argc, argv, "torque_control_pre");
+  ros::init(argc, argv, "torque_ctrl_6DOF");
   TorqueControl torque_ctrl;
 
   ros::Rate loop_rate(250);
 
-//  torque_ctrl.time_i = ros::Time::now().toSec();
-
   while (ros::ok())
   {
-    // // time_loop update
-    // torque_ctrl.time_f = ros::Time::now().toSec();
-		// torque_ctrl.time_loop = torque_ctrl.time_f - torque_ctrl.time_i;
-		// torque_ctrl.time_i = ros::Time::now().toSec();
-
-//    torque_ctrl.controlLoop(); // syncWrite
     torque_ctrl.jointStatePublish(); // [sensor_msgs::JointState] /joint_states
-//    torque_ctrl.ForwardKinematics(); // solve ForwardKinematics
-//    torque_ctrl.safe_func(); // check FK, effort and KILL at emergency
-//    torque_ctrl.Test();
-
     ros::spinOnce();
     loop_rate.sleep();
   }

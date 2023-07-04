@@ -31,5 +31,5 @@
   <param name="position_i_gain"		 value="$(arg position_i_gain)"/>
   <param name="position_d_gain"		 value="$(arg position_d_gain)"/>
 
-  <node name="torque_control_pre" pkg="dynamixel_workbench_controllers" type="torque_control_pre" required="true" output="screen"/>
+  <node name="torque_control_icros" pkg="dynamixel_workbench_controllers" type="torque_control_icros" required="true" output="screen"/>
 </launch>

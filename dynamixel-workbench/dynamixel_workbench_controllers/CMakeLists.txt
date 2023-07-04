@@ -58,14 +58,18 @@ add_executable(multi_port src/multi_port.cpp)
 add_dependencies(multi_port ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(multi_port ${catkin_LIBRARIES})
 
-add_executable(torque_control_pre src/torque_control_pre.cpp)
-add_dependencies(torque_control_pre ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(torque_control_pre ${catkin_LIBRARIES})
+add_executable(torque_control_icros src/torque_control_icros.cpp)
+add_dependencies(torque_control_icros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(torque_control_icros ${catkin_LIBRARIES})
+
+add_executable(torque_ctrl_6DOF src/torque_ctrl_6DOF.cpp)
+add_dependencies(torque_ctrl_6DOF ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(torque_ctrl_6DOF ${catkin_LIBRARIES})
 
 #################################################################################
 ## Install
 #################################################################################
-install(TARGETS position_control velocity_control multi_port torque_control_pre
+install(TARGETS position_control velocity_control multi_port torque_control_icros torque_ctrl_6DOF
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -76,10 +80,3 @@ install(DIRECTORY include/${PROJECT_NAME}/
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-################################################################################
-# Test
-################################################################################
-add_executable(limit src/limit.cpp)
-add_dependencies(limit ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(limit ${catkin_LIBRARIES})
