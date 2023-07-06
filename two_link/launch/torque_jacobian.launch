@@ -17,7 +17,10 @@
   <arg name="virtual_mass_y"              default="200.0"/>
   <arg name="virtual_damper_y"            default="10.0"/>
   <arg name="virtual_spring_y"            default="300.0"/>
-
+  
+  <arg name="virtual_mass_z"              default="200.0"/>
+  <arg name="virtual_damper_z"            default="10.0"/>
+  <arg name="virtual_spring_z"            default="300.0"/>
   <arg name="cut_off_freq_current"       default="5"/>
 
 <!--end-->
@@ -41,6 +44,10 @@
   <param name="virtual_mass_y"           value="$(arg virtual_mass_y)"/>
   <param name="virtual_damper_y"           value="$(arg virtual_damper_y)"/>
   <param name="virtual_spring_y"           value="$(arg virtual_spring_y)"/>
+
+  <param name="virtual_mass_z"           value="$(arg virtual_mass_z)"/>
+  <param name="virtual_damper_z"           value="$(arg virtual_damper_z)"/>
+  <param name="virtual_spring_z"           value="$(arg virtual_spring_z)"/>
 
   <param name="cut_off_freq_current"           value="$(arg cut_off_freq_current)"/>
 

@@ -55,6 +55,9 @@ TorqJ::TorqJ()
   virtual_damper_y = node_handle_.param<double>("virtual_damper_y", 1);
   virtual_spring_y = node_handle_.param<double>("virtual_spring_y", 1);
 
+  virtual_mass_z = node_handle_.param<double>("virtual_mass_z", 1);
+  virtual_damper_z = node_handle_.param<double>("virtual_damper_z", 1);
+  virtual_spring_z = node_handle_.param<double>("virtual_spring_z", 1);
 
   //---Current low pass filter--//
   cut_off_freq_current = node_handle_.param<double>("cut_off_freq_current", 1);
@@ -67,9 +70,9 @@ TorqJ::TorqJ()
   initSubscriber();
 
 
-  virtual_mass << virtual_mass_x, virtual_mass_y;
-  virtual_damper << virtual_damper_x, virtual_damper_y;
-  virtual_spring << virtual_spring_x, virtual_spring_y;
+  virtual_mass << virtual_mass_x, virtual_mass_y, virtual_mass_z;
+  virtual_damper << virtual_damper_x, virtual_damper_y, virtual_damper_z;
+  virtual_spring << virtual_spring_x, virtual_spring_y, virtual_spring_z;
 
 
   ROS_INFO("TorqJ node start");
@@ -90,12 +93,12 @@ TorqJ::TorqJ()
   //-----Matrix init-----//
   //---------------------//
 
-  angle_ref << 0, 0, 0;
-  X_ref << 0.0, 0.0;
+  angle_ref << 0, 0, 0, 0, 0, 0;
+  X_ref << 0.0, 0.0, 0.0;
 
   Cut_Off_Freq2 = Cut_Off_Freq * Cut_Off_Freq;
 
-  angle_d << 0, 0, 0;
+  angle_d << 0, 0, 0, 0, 0, 0;
   angle_d_lpf << 0, 0;
 
 
@@ -158,13 +161,25 @@ TorqJ::TorqJ()
 
   D_y << 0, 0;
 
+  A_z << 0, 1,
+      -virtual_spring[2] / virtual_mass[2], -virtual_damper[2] / virtual_mass[2];
+
+  B_z << 0, 1 / virtual_mass[2];
+
+  C_z << 1, 0;
+
+  D_z << 0, 0;
+
+
+
   X_from_model_matrix << 0, 0;
   X_dot_from_model_matrix << 0, 0;
 
   Y_from_model_matrix << 0, 0;
   Y_dot_from_model_matrix << 0, 0;
 
-
+  Z_from_model_matrix << 0, 0;
+  Z_dot_from_model_matrix << 0, 0;
 
 
   //------------------//
@@ -172,16 +187,16 @@ TorqJ::TorqJ()
   //------------------//
 
   //--Dead Zone--//
-  hysteresis_max << 0.35, 0.27, 0.2;
-  hysteresis_min << -0.24, -0.35, -0.2;
+  hysteresis_max << 0.35, 0.27, 0.2, 0, 0, 0; //나바
+  hysteresis_min << -0.24, -0.35, -0.2, 0, 0, 0;
 
   //--Angle saturation--//
-  angle_max << 1.6, 1.9, 0.75;
-  angle_min << -0.7, -1.8, -2;
+  angle_max << 1.6, 1.9, 0.75, 0, 0, 0; //나바
+  angle_min << -0.7, -1.8, -2, 0, 0, 0;
 
   //--F_ext saturation--//
-  Force_max << 2.0, 1.0;
-  Force_min << -2.0, -1.0;
+  Force_max << 2.0, 1.0, 0; //나바
+  Force_min << -2.0, -1.0, 0;
 
 
   theta_d = M_PI/2; //Command End Effector orientation
@@ -213,16 +228,21 @@ void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
   //Servo state subscriber
   angle_measured[0] = msg->position.at(0);
   angle_measured[1] = msg->position.at(1);
-  angle_measured[2] = msg->position.at(4);
+  angle_measured[2] = msg->position.at(2);
+  angle_measured[3] = msg->position.at(3);
+  angle_measured[4] = msg->position.at(4);
+  angle_measured[5] = msg->position.at(5);
+
 
   tau_measured[0] = msg->effort.at(0) * Kt_1; 
   tau_measured[1] = msg->effort.at(1) * Kt_2; 
   tau_measured[2] = msg->effort.at(2) * Kt_2; 
+  tau_measured[3] = msg->effort.at(3) * Kt_1; 
+  tau_measured[4] = msg->effort.at(4) * Kt_2; 
+  tau_measured[5] = msg->effort.at(5) * Kt_2; 
 
 
-  velocity_measured[0] = msg->velocity.at(0);
-
-  FK_EE_pos = EE_pos(angle_measured[0], angle_measured[1], angle_measured[2]); //Calculate measured End Effector position
+  //FK_EE_pos = EE_pos(angle_measured[0], angle_measured[1], angle_measured[2]); //Calculate measured End Effector position
 }
 
 
@@ -277,7 +297,7 @@ void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
   bw2_filtered_current_3_input[1] = bw2_filtered_current_3_input[2];
 
 
-  filtered_current << bw2_filtered_current_1_output[2], bw2_filtered_current_2_output[2], bw2_filtered_current_3_output[2];
+  filtered_current << bw2_filtered_current_1_output[2], bw2_filtered_current_2_output[2], bw2_filtered_current_3_output[2], 0, 0, 0; //나바
  // std::cout<<filtered_current<<std::endl<<"butterworthbutterworth"<<std::endl;
 }
 
@@ -288,7 +308,7 @@ void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
 void TorqJ::Calc_Ext_Force()
 {
 
-  J = Jacobian(angle_measured[0], angle_measured[1], angle_measured[2]);
+  J = Jacobian(angle_measured[0], angle_measured[1], angle_measured[2], 0, 0, 0); //나바
   JT = J.transpose();
   JTI = JT.completeOrthogonalDecomposition().pseudoInverse();
 
@@ -298,7 +318,7 @@ void TorqJ::Calc_Ext_Force()
   //---gravity model---//
   tau_gravity << (mass1 * CoM1 * cos(angle_measured[0]) + mass2 * Link1 * cos(angle_measured[0]) + mass2 * CoM2 * cos(angle_measured[0] + angle_measured[1]) + delta) * 9.81 - offset_1,
       mass2 * CoM2 * cos(angle_measured[0] + angle_measured[1] + delta) * 9.81 - offset_2,
-      -offset_3;
+      -offset_3, 0, 0, 0; //나바
 
   //---Calc Force_ext---//
   tau_ext = tau_measured - tau_gravity;
@@ -318,11 +338,12 @@ void TorqJ::Calc_Ext_Force()
   else if (tau_ext[2] > hysteresis_max[2]) tau_ext[2] -= hysteresis_max[2];
   else if (tau_ext[2] < hysteresis_min[2]) tau_ext[2] -= hysteresis_min[2];
 
+  tau_ext << 0, 0, 0, 0, 0, 0; //나바
 
   Force_ext_not_deadzone = JTI * tau_ext_not_deadzone;
 
   if(safety > 2000) Force_ext = JTI * tau_ext;
-  else Force_ext << 0, 0;
+  else Force_ext << 0, 0, 0, 0, 0, 0;
 
   //--Force saturation--//
   if (Force_ext[0] > Force_max[0]) Force_ext[0] = Force_max[0];
@@ -331,6 +352,7 @@ void TorqJ::Calc_Ext_Force()
   if (Force_ext[1] > Force_max[1]) Force_ext[1] = Force_max[1];
   else if (Force_ext[1] < Force_min[1]) Force_ext[1] = Force_min[1];
 
+  Force_ext[2] = 0; //나바
 
 
 }
@@ -355,6 +377,15 @@ void TorqJ::Admittance_control()
   position_from_model[1] = Y_from_model_matrix[0];
 
   X_cmd[1] = X_ref[1] - position_from_model[1];
+
+  //----------------------------------------------------------------
+  // Z axis admittance model --------------------------------
+
+// 나바
+  position_from_model[2] = 0;
+
+  X_cmd[2] = 0;
+
 
 }
 
@@ -392,22 +423,22 @@ if(movingFlag && safety > 1000)
 
 
 
-    //  Command Safety Function
-    if (std::isnan(X_Command[0]) || std::isnan(X_Command[1])) ROS_ERROR("Inverse Kinematics Error(NaN)");
-    else X_Command = X_cmd; // If wanna admittance, put "X_cmd". If don't wanna admittance, put "X_ref"
+//     //  Command Safety Function
+//     if (std::isnan(X_Command[0]) || std::isnan(X_Command[1])) ROS_ERROR("Inverse Kinematics Error(NaN)");
+//     else X_Command = X_cmd; // If wanna admittance, put "X_cmd". If don't wanna admittance, put "X_ref"
 
 
 
-  //-----Inverse Kinematics-----//
-POSITION_2[0] = X_Command[0] - Link3 * cos(theta_d);
-POSITION_2[1] = X_Command[1] - Link3 * sin(theta_d);
+//   //-----Inverse Kinematics-----//
+// POSITION_2[0] = X_Command[0] - Link3 * cos(theta_d);
+// POSITION_2[1] = X_Command[1] - Link3 * sin(theta_d);
 
-r2 = pow(POSITION_2[0], 2) + pow(POSITION_2[1], 2);
-D = (r2 - Link1 * Link1 - Link2 * Link2) / (2 * Link1 * Link2);
+// r2 = pow(POSITION_2[0], 2) + pow(POSITION_2[1], 2);
+// D = (r2 - Link1 * Link1 - Link2 * Link2) / (2 * Link1 * Link2);
 
-angle_ref[1] = atan2(sqrt(1 - D*D), D);
-angle_ref[0] = atan2(POSITION_2[1], POSITION_2[0]) - atan2(Link2 * sin(angle_ref[1]), Link1 + Link2 * cos(angle_ref[1]));
-angle_ref[2] = theta_d - (angle_ref[0] + angle_ref[1]);
+// angle_ref[1] = atan2(sqrt(1 - D*D), D);
+// angle_ref[0] = atan2(POSITION_2[1], POSITION_2[0]) - atan2(Link2 * sin(angle_ref[1]), Link1 + Link2 * cos(angle_ref[1]));
+// angle_ref[2] = theta_d - (angle_ref[0] + angle_ref[1]);
 
 
 
@@ -452,7 +483,16 @@ void TorqJ::DoB()
 
   angle_d[1] = angle_ref[1] - d_hat[1];
 
+
+//나바
   angle_d[2] = angle_ref[2];
+
+  angle_d[3] = angle_ref[3];
+
+  angle_d[4] = angle_ref[4];
+
+  angle_d[5] = angle_ref[5];
+
 }
 
 void TorqJ::angle_safe_func()
@@ -477,6 +517,9 @@ void TorqJ::angle_safe_func()
       angle_safe[0] = angle_command[0];
       angle_safe[1] = angle_command[1];
       angle_safe[2] = angle_command[2];
+      angle_safe[3] = angle_command[3];
+      angle_safe[4] = angle_command[4];
+      angle_safe[5] = angle_command[5];
   }
   else
   {
@@ -490,6 +533,14 @@ void TorqJ::angle_safe_func()
     if (std::isnan(angle_command[2])) ROS_ERROR("angle 3 is NaN!!");
     else if (angle_command[2] > angle_max[2] || angle_command[2] < angle_min[2]) ROS_ERROR("angle 3 LIMIT");
 
+    if (std::isnan(angle_command[3])) ROS_ERROR("angle 4 is NaN!!");
+    else if (angle_command[3] > angle_max[3] || angle_command[3] < angle_min[3]) ROS_ERROR("angle 4 LIMIT");
+
+    if (std::isnan(angle_command[4])) ROS_ERROR("angle 5 is NaN!!");
+    else if (angle_command[4] > angle_max[4] || angle_command[4] < angle_min[4]) ROS_ERROR("angle 5 LIMIT");
+
+    if (std::isnan(angle_command[5])) ROS_ERROR("angle 6 is NaN!!");
+    else if (angle_command[5] > angle_max[5] || angle_command[5] < angle_min[5]) ROS_ERROR("angle 6 LIMIT");
 
 
     //--for constraint--//
@@ -507,6 +558,9 @@ void TorqJ::angle_safe_func()
       angle_safe[0] = angle_command[0];
       angle_safe[1] = angle_command[1];
       angle_safe[2] = angle_command[2];
+      angle_safe[3] = angle_command[3];
+      angle_safe[4] = angle_command[4];
+      angle_safe[5] = angle_command[5];
     }
   }
 }
