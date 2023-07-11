@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   dynamixel_workbench_msgs
   message_generation
+  orocos_kdl
 )
 
 ## System dependencies are found with CMake's conventions
@@ -38,7 +39,8 @@ add_service_files(
 )
 ################################################
 ## Declare ROS messages, services and actions ##
-################################################
+##################################
+##############
 generate_messages(
   DEPENDENCIES
   std_msgs

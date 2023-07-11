@@ -6,6 +6,7 @@
   <arg name="position_p_gain"          default="700"/>
   <arg name="position_i_gain"          default="0"/>
   <arg name="position_d_gain"          default="400"/>
+
   <arg name="polar_moment_1"             default="0.0027"/>
   <arg name="polar_moment_2"             default="0.0027"/>
   <arg name="Cut_Off_Freq"             default="5"/>
@@ -32,6 +33,7 @@
   <param name="position_p_gain"        value="$(arg position_p_gain)"/>
   <param name="position_i_gain"        value="$(arg position_i_gain)"/>
   <param name="position_d_gain"        value="$(arg position_d_gain)"/>
+
   <param name="Cut_Off_Freq"           value="$(arg Cut_Off_Freq)"/>
   <param name="polar_moment_1"        value="$(arg polar_moment_1)"/>
   <param name="polar_moment_2"        value="$(arg polar_moment_2)"/>

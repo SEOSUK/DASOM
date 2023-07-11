@@ -37,6 +37,8 @@ TorqJ::TorqJ()
   position_i_gain = node_handle_.param<double>("position_i_gain", 1);
   position_d_gain = node_handle_.param<double>("position_d_gain", 1);
 
+  
+
 
   // Q-filter
   Cut_Off_Freq = node_handle_.param<double>("Cut_Off_Freq", 1);
@@ -93,113 +95,136 @@ TorqJ::TorqJ()
   //-----Matrix init-----//
   //---------------------//
 
+  // angle_ref << 0, 0, 0, 0, 0, 0;
+  // X_ref << 0.0, 0.0, 0.0;
+
+  // Cut_Off_Freq2 = Cut_Off_Freq * Cut_Off_Freq;
+
+  // angle_d << 0, 0, 0, 0, 0, 0;
+  // angle_d_lpf << 0, 0;
+
+
+  // //--For Model of DOB--//
+  // Q_M << 0, 0, 0, 0;
+  // Q_M_2 << 0, 0, 0, 0;
+
+  // Q_M_dot << 0, 0, 0, 0;
+  // Q_M_dot_2 << 0, 0, 0, 0;
+
+  // Q_M_B << 0, 0, 0, 1;
+
+
+  // Q_M_A << 0, 1, 0, 0,
+  //     0, 0, 1, 0,
+  //     0, 0, 0, 1,
+  //     -position_i_gain * Cut_Off_Freq2 / position_d_gain,
+  //     -(position_p_gain * Cut_Off_Freq2 + sqrt(2) * position_i_gain * Cut_Off_Freq) / position_d_gain,
+  //     -(position_d_gain * Cut_Off_Freq2 + sqrt(2) * position_p_gain * Cut_Off_Freq + position_i_gain) / position_d_gain,
+  //     -(position_p_gain + sqrt(2) * position_d_gain * Cut_Off_Freq) / position_d_gain;
+
+  // Q_M_C << Cut_Off_Freq2 * position_i_gain / position_d_gain,
+  //     Cut_Off_Freq2 * position_p_gain / position_d_gain,
+  //     Cut_Off_Freq2,
+  //     Cut_Off_Freq2 * polar_moment_1 / position_d_gain;
+
+
+  // //---For Q-filter--//
+  // Q_angle_d << 0, 0;
+  // Q_angle_d_2 << 0, 0;
+  // Q_angle_d_dot << 0, 0;
+  // Q_angle_d_dot_2 << 0, 0;
+  // Q_angle_d_A << 0, 1,
+  //     -Cut_Off_Freq2, -sqrt(2) * Cut_Off_Freq;
+
+  // Q_angle_d_B << 0, Cut_Off_Freq2;
+
+  // Q_angle_d_C << 1, 0;
+
+  // Q_angle_d_C = Q_angle_d_C.transpose();
+
+  // //////////////////////////////////////////
+  // ////////////////Admittance////////////////
+  // //////////////////////////////////////////
+  // A_x << 0, 1,
+  //     -virtual_spring[0] / virtual_mass[0], -virtual_damper[0] / virtual_mass[0];
+
+  // B_x << 0, 1 / virtual_mass[0];
+
+  // C_x << 1, 0;
+
+  // D_x << 0, 0;
+
+  // A_y << 0, 1,
+  //     -virtual_spring[1] / virtual_mass[1], -virtual_damper[1] / virtual_mass[1];
+
+  // B_y << 0, 1 / virtual_mass[1];
+
+  // C_y << 1, 0;
+
+  // D_y << 0, 0;
+
+  // A_z << 0, 1,
+  //     -virtual_spring[2] / virtual_mass[2], -virtual_damper[2] / virtual_mass[2];
+
+  // B_z << 0, 1 / virtual_mass[2];
+
+  // C_z << 1, 0;
+
+  // D_z << 0, 0;
+
+
+
+  // X_from_model_matrix << 0, 0;
+  // X_dot_from_model_matrix << 0, 0;
+
+  // Y_from_model_matrix << 0, 0;
+  // Y_dot_from_model_matrix << 0, 0;
+
+  // Z_from_model_matrix << 0, 0;
+  // Z_dot_from_model_matrix << 0, 0;
+
+
+  // //------------------//
+  // // Tuning parameter //
+  // //------------------//
+
+  // //--Dead Zone--//
+  // hysteresis_max << 0.35, 0.27, 0.2, 0, 0, 0; //나바
+  // hysteresis_min << -0.24, -0.35, -0.2, 0, 0, 0;
+
+  // //--Angle saturation--//
+  // angle_max << 1.6, 1.9, 0.75, 0, 0, 0; //나바
+  // angle_min << -0.7, -1.8, -2, 0, 0, 0;
+
+  // //--F_ext saturation--//
+  // Force_max << 2.0, 1.0, 0; //나바
+  // Force_min << -2.0, -1.0, 0;
+
+
+  // theta_d = M_PI/2; //Command End Effector orientation
+
+  // angle_ref << 0, 0, 0, 0, 0, 0;
+  // X_test << 0, 0, 0, 0, 0, 0;
+  // FK_EE_pos << 0, 0, 0;
+  // FK_EE_ori << 0, 0, 0;
+    ROS_INFO("Before you use admitService, put E.E to reference position");
+  X_test.resize(6,1);
+  angle_ref.resize(6,1);
+  FK_EE_pos.resize(3,1);
+  FK_EE_ori.resize(3,1);
+
+  angle_measured.resize(6,1);
+  tau_measured.resize(6,1);
+  
+  J.resize(6,6);
+  JT.resize(6,6);
+  JTI.resize(6,6);
+
+  X_test << 0, 0, 0, 0, 0, 0;
   angle_ref << 0, 0, 0, 0, 0, 0;
-  X_ref << 0.0, 0.0, 0.0;
-
-  Cut_Off_Freq2 = Cut_Off_Freq * Cut_Off_Freq;
-
-  angle_d << 0, 0, 0, 0, 0, 0;
-  angle_d_lpf << 0, 0;
-
-
-  //--For Model of DOB--//
-  Q_M << 0, 0, 0, 0;
-  Q_M_2 << 0, 0, 0, 0;
-
-  Q_M_dot << 0, 0, 0, 0;
-  Q_M_dot_2 << 0, 0, 0, 0;
-
-  Q_M_B << 0, 0, 0, 1;
-
-
-  Q_M_A << 0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
-      -position_i_gain * Cut_Off_Freq2 / position_d_gain,
-      -(position_p_gain * Cut_Off_Freq2 + sqrt(2) * position_i_gain * Cut_Off_Freq) / position_d_gain,
-      -(position_d_gain * Cut_Off_Freq2 + sqrt(2) * position_p_gain * Cut_Off_Freq + position_i_gain) / position_d_gain,
-      -(position_p_gain + sqrt(2) * position_d_gain * Cut_Off_Freq) / position_d_gain;
-
-  Q_M_C << Cut_Off_Freq2 * position_i_gain / position_d_gain,
-      Cut_Off_Freq2 * position_p_gain / position_d_gain,
-      Cut_Off_Freq2,
-      Cut_Off_Freq2 * polar_moment_1 / position_d_gain;
-
-
-  //---For Q-filter--//
-  Q_angle_d << 0, 0;
-  Q_angle_d_2 << 0, 0;
-  Q_angle_d_dot << 0, 0;
-  Q_angle_d_dot_2 << 0, 0;
-  Q_angle_d_A << 0, 1,
-      -Cut_Off_Freq2, -sqrt(2) * Cut_Off_Freq;
-
-  Q_angle_d_B << 0, Cut_Off_Freq2;
-
-  Q_angle_d_C << 1, 0;
-
-  Q_angle_d_C = Q_angle_d_C.transpose();
-
-  //////////////////////////////////////////
-  ////////////////Admittance////////////////
-  //////////////////////////////////////////
-  A_x << 0, 1,
-      -virtual_spring[0] / virtual_mass[0], -virtual_damper[0] / virtual_mass[0];
-
-  B_x << 0, 1 / virtual_mass[0];
-
-  C_x << 1, 0;
-
-  D_x << 0, 0;
-
-  A_y << 0, 1,
-      -virtual_spring[1] / virtual_mass[1], -virtual_damper[1] / virtual_mass[1];
-
-  B_y << 0, 1 / virtual_mass[1];
-
-  C_y << 1, 0;
-
-  D_y << 0, 0;
-
-  A_z << 0, 1,
-      -virtual_spring[2] / virtual_mass[2], -virtual_damper[2] / virtual_mass[2];
-
-  B_z << 0, 1 / virtual_mass[2];
-
-  C_z << 1, 0;
-
-  D_z << 0, 0;
-
-
-
-  X_from_model_matrix << 0, 0;
-  X_dot_from_model_matrix << 0, 0;
-
-  Y_from_model_matrix << 0, 0;
-  Y_dot_from_model_matrix << 0, 0;
-
-  Z_from_model_matrix << 0, 0;
-  Z_dot_from_model_matrix << 0, 0;
-
-
-  //------------------//
-  // Tuning parameter //
-  //------------------//
-
-  //--Dead Zone--//
-  hysteresis_max << 0.35, 0.27, 0.2, 0, 0, 0; //나바
-  hysteresis_min << -0.24, -0.35, -0.2, 0, 0, 0;
-
-  //--Angle saturation--//
-  angle_max << 1.6, 1.9, 0.75, 0, 0, 0; //나바
-  angle_min << -0.7, -1.8, -2, 0, 0, 0;
-
-  //--F_ext saturation--//
-  Force_max << 2.0, 1.0, 0; //나바
-  Force_min << -2.0, -1.0, 0;
-
-
-  theta_d = M_PI/2; //Command End Effector orientation
+  FK_EE_pos << 0, 0, 0;
+  FK_EE_ori << 0, 0, 0;
+      ROS_INFO("fffffff");
 
 }
 
@@ -242,7 +267,6 @@ void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
   tau_measured[5] = msg->effort.at(5) * Kt_2; 
 
 
-  //FK_EE_pos = EE_pos(angle_measured[0], angle_measured[1], angle_measured[2]); //Calculate measured End Effector position
 }
 
 
@@ -308,7 +332,7 @@ void TorqJ::jointCallback(const sensor_msgs::JointState::ConstPtr &msg)
 void TorqJ::Calc_Ext_Force()
 {
 
-  J = Jacobian(angle_measured[0], angle_measured[1], angle_measured[2], 0, 0, 0); //나바
+  J = Jacobian(angle_measured[0], angle_measured[1], angle_measured[2], angle_measured[3], angle_measured[4], angle_measured[5]); //나바
   JT = J.transpose();
   JTI = JT.completeOrthogonalDecomposition().pseudoInverse();
 
@@ -598,8 +622,8 @@ void TorqJ::angle_safe_func()
   virtual_damper[1] = req.y_d;
   virtual_spring[1] = req.y_k;
 
-ROS_INFO("Admittance Parameter updated!");
-ROS_INFO("x: %lf, %lf, %lf \n y: %lf, %lf, %lf", virtual_mass[0], virtual_damper[0], virtual_spring[0], virtual_mass[1], virtual_damper[1], virtual_spring[1]);
+  ROS_INFO("Admittance Parameter updated!");
+  ROS_INFO("x: %lf, %lf, %lf \n y: %lf, %lf, %lf", virtual_mass[0], virtual_damper[0], virtual_spring[0], virtual_mass[1], virtual_damper[1], virtual_spring[1]);
 
   //////////////////////////////////////////
   ////////////////Admittance////////////////
@@ -633,7 +657,27 @@ ROS_INFO("x: %lf, %lf, %lf \n y: %lf, %lf, %lf", virtual_mass[0], virtual_damper
 	return true;
  }
 
+double t = 0;
+void TorqJ::CommandGenerator()
+{
+  
+  t++;
+  double Amp = 0.07;
+  double period = 5;
+  X_test[0] = 0; //Amp * (sin(2* M_PI * 0.005 * t / period + M_PI/2)) + 0.114329 - Amp;
 
+  double Amp1 = 0.07;
+  double period1 = 5;
+  X_test[1] = 0; //Amp1 * (sin(2* M_PI * 0.005 * t / period1 + M_PI/2)) + 0.114329 - Amp1;
+
+  double Amp2 = 0.05;
+  double period2 = 3;
+  X_test[2] = 0.41;//Amp2 * (sin(2* M_PI * 0.005 * t / period2 + M_PI/2)) + 0.1;
+
+  X_test[3] = M_PI/2; //* (t / 0.005) / (180 * M_PI);
+  X_test[4] = 0 * (t / 0.005) / (180 * M_PI);
+  X_test[5] = 0 * (t / 0.005) / (180 * M_PI); //1초에 몇 도(degree) 씩 회전시킬지
+}
 
 
 void TorqJ::PublishCmdNMeasured()
@@ -646,14 +690,51 @@ void TorqJ::PublishCmdNMeasured()
   geometry_msgs::Twist second_publisher;
   // tau_des를 publish
   joint_cmd.header.stamp = ros::Time::now();
-  joint_cmd.position.push_back(angle_safe[0]); 
-  joint_cmd.position.push_back(angle_safe[1]); 
-  joint_cmd.position.push_back(0);            
-  joint_cmd.position.push_back(0);             
-  joint_cmd.position.push_back(angle_safe[2]);
+  joint_cmd.position.push_back(angle_ref[0]); 
+  joint_cmd.position.push_back(angle_ref[1]); 
+  joint_cmd.position.push_back(angle_ref[2]); 
+  joint_cmd.position.push_back(angle_ref[3]); 
+  joint_cmd.position.push_back(angle_ref[4]); 
+  joint_cmd.position.push_back(angle_ref[5]); 
+
+  joint_cmd.velocity.push_back(X_test[0] - FK_EE_pos[0]); 
+  joint_cmd.velocity.push_back(X_test[1] - FK_EE_pos[1]); 
+  joint_cmd.velocity.push_back(X_test[2] - FK_EE_pos[2]); 
+  joint_cmd.velocity.push_back(X_test[3] - FK_EE_ori[0]); 
+  joint_cmd.velocity.push_back(X_test[4] - FK_EE_ori[1]); 
+  joint_cmd.velocity.push_back(X_test[5] - FK_EE_ori[2]); 
+
+
+  joint_cmd.effort.push_back(FK_EE_pos[0]); 
+  joint_cmd.effort.push_back(FK_EE_pos[1]); 
+  joint_cmd.effort.push_back(FK_EE_pos[2]); 
+  joint_cmd.effort.push_back(FK_EE_ori[0]); 
+  joint_cmd.effort.push_back(FK_EE_ori[1]); 
+  joint_cmd.effort.push_back(FK_EE_ori[2]); 
+
   joint_command_pub_.publish(joint_cmd);
 
 
+}
+
+void TorqJ::solveInverseKinematics()
+{
+  // EE_position과 orientation이 들어왔을 것: X_ref, Orientation_ref
+
+  angle_ref = InverseKinematics(X_test[0], X_test[1], X_test[2],
+                                X_test[3], X_test[4], X_test[5]);
+
+   ROS_INFO("=============angle command from inverse kinematics=========");
+ ROS_INFO("%lf, %lf, %lf, %lf, %lf, %lf", angle_ref[0], angle_ref[1], angle_ref[2], angle_ref[3], angle_ref[4], angle_ref[5]);
+
+  double test_angle_ = 0;
+
+  FK_EE_pos = EE_pos(angle_ref[0], angle_ref[1], angle_ref[2], angle_ref[3], angle_ref[4], angle_ref[5]);
+  FK_EE_ori = EE_orientation(angle_ref[0], angle_ref[1], angle_ref[2], angle_ref[3], angle_ref[4], angle_ref[5]);
+
+  ROS_INFO("============Command position - FK position ================");
+  ROS_INFO("%lf, %lf, %lf, %lf, %lf, %lf", FK_EE_pos[0] - X_test[0], FK_EE_pos[1] - X_test[1], FK_EE_pos[2] - X_test[2], 
+                                          FK_EE_ori[0] - X_test[3], FK_EE_ori[1] - X_test[4], FK_EE_ori[2] - X_test[5]);
 }
 
 int main(int argc, char **argv)
@@ -675,8 +756,11 @@ int main(int argc, char **argv)
     time_loop = time_f - time_i;
     time_i = ros::Time::now().toSec();
 
-    torqJ.Admittance_control();
-    torqJ.calc_des();
+    // torqJ.Admittance_control();
+    // torqJ.calc_des();
+
+    torqJ.CommandGenerator();
+    torqJ.solveInverseKinematics();   
     torqJ.PublishCmdNMeasured();
     ros::spinOnce();
     
