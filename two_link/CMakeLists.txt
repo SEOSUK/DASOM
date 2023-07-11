@@ -66,3 +66,7 @@ target_link_libraries(Admittance_TwoLink.cpp ${catkin_LIBRARIES})
 add_executable(torque_jacobian src/torque_jacobian.cpp)
 add_dependencies(torque_jacobian ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(torque_jacobian ${catkin_LIBRARIES})
+
+add_executable(dasom_kdl src/dasom_kdl.cpp)
+add_dependencies(dasom_kdl ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(dasom_kdl ${catkin_LIBRARIES})
