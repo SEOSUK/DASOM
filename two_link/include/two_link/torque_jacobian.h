@@ -13,6 +13,7 @@
 #include "two_link/movingFlag.h"
 #include "two_link/admittanceTest.h"
 #include <kdl/chain.hpp>
+#include "geometry_msgs/PoseStamped.h"
 
 #define PI 3.14159256359
 
@@ -49,7 +50,7 @@ class TorqJ
   Eigen::Vector3d Orientation_ref;
   Eigen::VectorXd X_test;
   Eigen::Vector3d X_ref;
-  Eigen::Vector3d X_cmd;
+  Eigen::VectorXd X_cmd;
   Eigen::Vector3d X_Command;
   Eigen::Vector3d V_measured;
   Eigen::VectorXd angle_measured;
@@ -185,14 +186,13 @@ class TorqJ
   double a1_2nd;
   double a2_2nd;
 
-  //--Init position 맞추는 용도
+  // Init position 맞추는 용도
   bool initPoseFlag;
   double initPoseCnt;
   bool checkFirstPoseFlag;
   Eigen::VectorXd initPose;
   Eigen::VectorXd firstPose;
   Eigen::VectorXd PoseDelta;
-
 
   // Current lpf result
   Eigen::VectorXd filtered_current;
@@ -240,6 +240,7 @@ class TorqJ
   ros::Publisher joint_command_pub_;
   ros::Publisher joint_measured_pub_;
   ros::Subscriber joint_states_sub_;
+  ros::Subscriber joystick_sub_;
   ros::ServiceServer movingService;
   ros::ServiceServer admitService;
 
@@ -338,10 +339,6 @@ class TorqJ
                  0,         0,     0,       1;
     return L;
   };
-
-  //////////////////////////////////////////////////////
-  //////////////--- Forward Kinematics ---//////////////
-  //////////////////////////////////////////////////////
 
   static Eigen::Matrix3d R03(double theta_1, double theta_2, double theta_3)
   {
@@ -574,7 +571,7 @@ class TorqJ
     theta2 = atan2(Wrist_Position[2] - l1, sqrt(pow(Wrist_Position[0],2) + pow(Wrist_Position[1],2)))
           + atan2(sqrt(1-pow(D_theta2,2)),D_theta2); // sign
 
-    ROS_INFO("%lf, %lf", D_theta2, theta2);
+    // ROS_INFO("%lf, %lf", D_theta2, theta2);
 
     D_theta3 = (pow(l2,2) + pow((l3 + l5),2) - pow(r2,2)) / (2 * l2 * (l3 + l5));
     theta3 = -(PI - atan2(sqrt(1 - pow(D_theta3,2)), D_theta3)); // sign
@@ -598,19 +595,19 @@ class TorqJ
     return theta;
   }
 
-  
   void poseCallback(const geometry_msgs::Twist::ConstPtr &msg);
   void commandCallback(const sensor_msgs::JointState::ConstPtr &msg);
   void jointCallback(const sensor_msgs::JointState::ConstPtr &msg);
+  void joystickCallback(const geometry_msgs::PoseStamped& msg);
 
 };
 
-double TorqJ::l1 = 0.01;
-double TorqJ::l2 = 0.1;
-double TorqJ::l3 = 0.1;
+double TorqJ::l1 = 0.05465;
+double TorqJ::l2 = 0.1585;
+double TorqJ::l3 = 0.099;
 double TorqJ::l4 = 0.001;
-double TorqJ::l5 = 0.1;
+double TorqJ::l5 = 0.06483;
 double TorqJ::l6 = 0.001;
-double TorqJ::l7 = 0.1;
+double TorqJ::l7 = 0.16949;
 
 #endif //TorqJ_H_
