@@ -1,5 +1,9 @@
 <launch>
 
+	<include file="$(find setting_tf2)/launch/tf2_setting.launch">
+  </include>
+
+
 <!--For DoB&Current based position control-->
   <arg name="robot_name"      default="dasom"/>
 

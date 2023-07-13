@@ -213,7 +213,7 @@ TorqJ::TorqJ()
 
   angle_measured.resize(6);
   tau_measured.resize(6,1);
-  
+
   J.resize(6,6);
   JT.resize(6,6);
   JTI.resize(6,6);
@@ -255,13 +255,17 @@ void TorqJ::joystickCallback(const geometry_msgs::PoseStamped& msg)
   X_cmd[1] = msg.pose.position.y;
   X_cmd[2] = msg.pose.position.z;
 
+  tf::Quaternion quat;
+  tf::quaternionMsgToTF(msg.pose.orientation, quat);
+  tf::Matrix3x3(quat).getRPY(HapticRPY[0], HapticRPY[1], HapticRPY[2]);
+  ROS_INFO("%lf, %lf, %lf", HapticRPY[0], HapticRPY[1], HapticRPY[2]);
 }
 
 
 void TorqJ::initSubscriber()
 {
   joint_states_sub_ = node_handle_.subscribe("/joint_states", 10, &TorqJ::jointCallback, this);
-  joystick_sub_ = node_handle_.subscribe("/dasom_EE_command", 10, &TorqJ::joystickCallback, this);
+  joystick_sub_ = node_handle_.subscribe("/phantom/dasom_EE_command", 10, &TorqJ::joystickCallback, this);
   movingService = node_handle_.advertiseService("/movingService", &TorqJ::movingServiceCallback, this);
   admitService = node_handle_.advertiseService("/admitService", &TorqJ::AdmittanceCallback, this);
 }

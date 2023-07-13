@@ -15,6 +15,14 @@
 #include <kdl/chain.hpp>
 #include "geometry_msgs/PoseStamped.h"
 
+#include "tf/transform_datatypes.h"
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2_msgs/TFMessage.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/Transform.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/static_transform_broadcaster.h>
+
 #define PI 3.14159256359
 
 class TorqJ
@@ -54,7 +62,7 @@ class TorqJ
   Eigen::Vector3d X_Command;
   Eigen::Vector3d V_measured;
   Eigen::VectorXd angle_measured;
-
+  Eigen::Vector3d HapticRPY;
 
   Eigen::MatrixXd J;
   Eigen::MatrixXd JT;
