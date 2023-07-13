@@ -185,6 +185,15 @@ class TorqJ
   double a1_2nd;
   double a2_2nd;
 
+  //--Init position 맞추는 용도
+  bool initPoseFlag;
+  double initPoseCnt;
+  bool checkFirstPoseFlag;
+  Eigen::VectorXd initPose;
+  Eigen::VectorXd firstPose;
+  Eigen::VectorXd PoseDelta;
+
+
   // Current lpf result
   Eigen::VectorXd filtered_current;
   double cut_off_freq_current;
@@ -201,6 +210,7 @@ class TorqJ
   void second_order_butterworth();
   void CommandGenerator();
   void solveInverseKinematics();
+  void setInitpose();
   bool movingServiceCallback(two_link::movingFlag::Request  &req,
                              two_link::movingFlag::Response &res);
   bool AdmittanceCallback(two_link::admittanceTest::Request  &req,
@@ -328,6 +338,23 @@ class TorqJ
                  0,         0,     0,       1;
     return L;
   };
+
+  //////////////////////////////////////////////////////
+  //////////////--- Forward Kinematics ---//////////////
+  //////////////////////////////////////////////////////
+
+  static Eigen::Matrix3d R03(double theta_1, double theta_2, double theta_3)
+  {
+    Eigen::Matrix4d L;
+    L << L1(theta_1)*L2(theta_2)*L3(theta_3);
+
+    Eigen::Matrix3d R03;
+    R03 << L(0,0), L(0,1), L(0,2),
+           L(1,0), L(1,1), L(1,2),
+           L(2,0), L(2,1), L(2,2);
+
+    return R03;
+  }
 
   //////////////////////////////////////////////////////
   //////////////--- Forward Kinematics ---//////////////
@@ -486,19 +513,6 @@ class TorqJ
     return J;
   }
 
-  static Eigen::Matrix3d R03(double theta_1, double theta_2, double theta_3)
-  {
-    Eigen::Matrix4d L;
-    L << L1(theta_1)*L2(theta_2)*L3(theta_3);
-
-    Eigen::Matrix3d R03;
-    R03 << L(0,0), L(0,1), L(0,2),
-           L(1,0), L(1,1), L(1,2),
-           L(2,0), L(2,1), L(2,2);
-
-    return R03;
-  }
-
   static Eigen::Matrix3d CmdOrientation(double roll, double pitch, double yaw)
   {
     Eigen::Matrix3d R;
@@ -584,6 +598,7 @@ class TorqJ
     return theta;
   }
 
+  
   void poseCallback(const geometry_msgs::Twist::ConstPtr &msg);
   void commandCallback(const sensor_msgs::JointState::ConstPtr &msg);
   void jointCallback(const sensor_msgs::JointState::ConstPtr &msg);
